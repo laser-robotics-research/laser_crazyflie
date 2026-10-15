@@ -320,6 +320,30 @@
     {% endif %}
     {# <!--}--> #}
 
+    
+    {# AI-deck 1.1 (câmera Himax HM01B0) {--> #}
+    
+    {% if enable_ai_deck %}
+    {{ components.ai_deck_camera_macro(
+      namespace = namespace,
+      parent_link = root,
+      mesh_file = 'model://laser_uavs_description/meshes/sensors/ai_deck_1_1.stl',
+      x = 0.0,
+      y = 0.0,
+      z = 0.015,
+      roll = 0,
+      pitch = 0,
+      yaw = 0,
+      visual_x = -0.0271,
+      visual_y = 0.0143,
+      visual_z = 0.0006,
+      sensor_x = 0.029,
+      sensor_y = 0,
+      sensor_z = 0)
+    }}
+    {% endif %}
+    {# <!--}--> #}
+
     {# Sensores pesados do x500 (Livox, RealSense, VIO, pendulo, Garmin) foram omitidos de proposito:
        o Crazyflie carrega ~15 g de carga util. #}
   </model>
