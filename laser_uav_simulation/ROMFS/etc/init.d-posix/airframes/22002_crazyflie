@@ -1,0 +1,59 @@
+#!/bin/sh
+#
+# @name crazyflie
+#
+# @type Quadrotor
+#
+# Crazyflie 2.1+ no LUS (PX4 SITL + Gazebo Classic).
+# Base: 22000_x500. Valores marcados com [TUNE] sao de partida e precisam ser
+# validados em simulacao.
+
+. ${R}etc/init.d/rc.mc_defaults
+
+
+param set-default CA_AIRFRAME 0
+
+param set-default CA_ROTOR_COUNT 4
+
+# Geometria: braco de 0.0325 m em x e y (mesma numeracao do modelo .sdf.jinja:
+# 0 = frente-direita ccw, 1 = tras-esquerda ccw, 2 = frente-esquerda cw, 3 = tras-direita cw)
+param set-default CA_ROTOR0_PX 0.0325
+param set-default CA_ROTOR0_PY 0.0325
+param set-default CA_ROTOR0_KM  0.006
+
+param set-default CA_ROTOR1_PX -0.0325
+param set-default CA_ROTOR1_PY -0.0325
+param set-default CA_ROTOR1_KM  0.006
+
+param set-default CA_ROTOR2_PX 0.0325
+param set-default CA_ROTOR2_PY -0.0325
+param set-default CA_ROTOR2_KM -0.006
+
+param set-default CA_ROTOR3_PX -0.0325
+param set-default CA_ROTOR3_PY 0.0325
+param set-default CA_ROTOR3_KM -0.006
+
+param set-default PWM_MAIN_FUNC1 101
+param set-default PWM_MAIN_FUNC2 102
+param set-default PWM_MAIN_FUNC3 103
+param set-default PWM_MAIN_FUNC4 104
+
+param set-default BAT1_SOURCE -1
+
+# [TUNE] Ganhos do controle de taxa: inercia do Crazyflie e ~1e-5 kg.m^2, entao
+# os ganhos padrao do PX4 (pensados para drones maiores) oscilam. Valores do
+# airframe 4901_crazyflie21 do PX4.
+param set-default MC_ROLLRATE_P 0.07
+param set-default MC_ROLLRATE_D 0.002
+param set-default MC_PITCHRATE_P 0.07
+param set-default MC_PITCHRATE_D 0.002
+param set-default MC_YAW_P 3
+
+# [TUNE] Empuxo/peso ~1.9 (hover perto de 51% do empuxo maximo do modelo).
+# Chute inicial; ajustar com o comando de motor observado em hover no log.
+param set-default MPC_THR_HOVER 0.6
+
+param set-default MAV_SYS_ID $((px4_instance+1))
+param set-default UXRCE_DDS_KEY $((px4_instance+1))
+
+param set-default COM_DISARM_PRFLT 0

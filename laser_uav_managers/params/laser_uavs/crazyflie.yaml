@@ -1,0 +1,46 @@
+# Destino: laser_uav_managers/params/laser_uavs/crazyflie.yaml
+# Valores derivados do models/laser_uavs_description/sdf/crazyflie.sdf.jinja.
+# Itens marcados com [TUNE] sao de partida e precisam ser validados em simulacao.
+/**/**:
+  ros__parameters:
+    multirotor_parameters:
+      # Massa do corpo (mesma convencao do x500/lr7pro: so o base_link; as 4 helices somam +0.003 kg no Gazebo)
+      mass: 0.025 # Kg
+
+      # Diagonal da matriz de inercia (body_ixx, body_iyy, body_izz do SDF; os termos cruzados do SDF sao ignorados)
+      inertia: [1.657171e-5, 1.6655602e-5, 2.9261652e-5]
+
+      # Constante de empuxo = motor_constant do SDF [N/(rad/s)^2]
+      c_thrust: 1.2819184e-8
+
+      drag: [0.0, 0.0, 0.0]
+
+      n_motors: 4
+
+      # Matriz de efetividade [F; tau_x; tau_y; tau_z] = G1 * [T0..T3]  (corpo FLU, ordem dos motores do SDF)
+      #   braco = rotor_xy_offset = 0.03252691193 m
+      #   yaw   = moment_constant = 0.005964552 m (ccw: motores 0,1 -> sinal negativo; cw: 2,3 -> positivo)
+      G1: [ 1.0,         1.0,         1.0,         1.0,
+           -0.03252691, 0.03252691,  0.03252691, -0.03252691,
+           -0.03252691, 0.03252691, -0.03252691,  0.03252691,
+           -0.005964552, -0.005964552, 0.005964552, 0.005964552 ]
+
+      # [TUNE] Inercia do motor/helice (yaw). Valor fisico da helice (sem o slowdown x70 do SDF).
+      G2: [ 0.0,      0.0,      0.0,     0.0,
+            0.0,      0.0,      0.0,     0.0,
+            0.0,      0.0,      0.0,     0.0,
+           -1.3e-7,  -1.3e-7,   1.3e-7,  1.3e-7 ]
+
+      # DEVE bater com motorQuadraticA/B do SDF
+      quadratic_motor_model:
+        a: 2.894
+        b: 0.0
+
+      # [TUNE] Empuxo maximo por motor ~ c_thrust * max_rot_velocity^2 = 1.2819184e-8 * 3052^2 = 0.1194 N
+      # (no x500/lr7pro o yaml usa ~82-87% desse valor; ajustar com o comando de hover observado)
+      thrust_min: 0.0 # N
+      thrust_max: 0.1194 # N
+      total_thrust_max: 0.40 # N
+
+      # [TUNE]
+      omega_max: [10.0, 10.0, 4.0]

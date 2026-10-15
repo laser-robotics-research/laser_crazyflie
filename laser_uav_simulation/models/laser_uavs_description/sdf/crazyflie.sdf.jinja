@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version='1.6'>
+
+  {% import "component_snippets.sdf.jinja" as components %}
+
+  {# ================================================================== #}
+  {# ||  Crazyflie 2.1+ -- portado do CrazyS (crazyflie.xacro)       || #}
+  {# ||  Estrutura baseada no x500.sdf.jinja do LUS                  || #}
+  {# ================================================================== #}
+
+  {# Robot parameters {--> #}
+  {%- set mass = 0.025 -%} {# [kg] #}
+  {%- set body_radius = 0.035 -%} {# [m] xacro usa caixa 0.07 x 0.07; aqui vira cilindro #}
+  {%- set body_height = 0.025 -%} {# [m] #}
+  {%- set mass_prop = 0.00075 -%} {# [kg] #}
+  {%- set radius_rotor = 0.0225 -%} {# [m] #}
+
+  {%- set rotor_xy_offset = 0.03252691193 -%} {# [m] #}
+  {%- set rotor_z_offset = 0.0125 -%} {# [m] #}
+
+  {%- set root = 'base_link' -%}
+  {# <!--}--> #}
+
+  {# Motor constants {--> #}
+  {# TODO: no CrazyS o rotor_velocity_slowdown_sim e 70 (estabilidade do ODE com 3052 rad/s).
+     O x500 e o lr7pro usam 1.0. Testar os dois com o libMotorPluginGazebo. #}
+  {%- set rotor_velocity_slowdown_sim = 1.0 -%}
+
+  {# TODO (PLACEHOLDER): copiados do x500. A semantica exata depende do libMotorPluginGazebo
+     (curva aceleracao -> velocidade do rotor); precisam ser calibrados para o Crazyflie. #}
+  {%- set motor_quadratic_a = 2.894 -%}
+  {%- set motor_quadratic_b = 0.0 -%}
+
+  {%- set motor_constant = 1.2819184e-8 -%} {# [kg.m/s^2] #}
+  {%- set moment_constant = 0.005964552 -%} {# [m] #}
+  {%- set time_constant_up = 0.0125 -%} {# [s] #}
+  {%- set time_constant_down = 0.025 -%} {# [s] #}
+  {%- set max_rot_velocity = 3052 -%} {# [rad/s] #}
+  {%- set rotor_drag_coefficient = 9.1785e-7 -%}
+  {%- set rolling_moment_coefficient = "1.0e-7" -%}
+
+  {# BEM desligado (parametros so para satisfazer a assinatura do macro) #}
+  {%- set use_bem_model = false -%}
+  {%- set bem_rho = 1.225 -%}
+  {%- set prop_diameter_inches = 2.0 -%}
+  {%- set prop_pitch_inches = 1.0 -%}
+  {%- set prop_chord_m = 0.006 -%}
+  {%- set prop_qty_blades = 2 -%}
+  {%- set bem_alpha = 2.8481 -%}
+  {%- set bem_cd0 = 0.0500 -%}
+  {# <!--}--> #}
+
+  {# Scales and meshes {--> #}
+  {%- set mesh_scale = '1 1 1' -%}
+  {# O CrazyS usa o mesmo mesh de helice nos 4 rotores, sem espelhar. #}
+  {%- set mesh_scale_prop_ccw = '1 1 1' -%}
+  {%- set mesh_scale_prop_cw = '1 1 1' -%}
+
+  {%- set body_mesh_file = 'model://laser_uavs_description/meshes/crazyflie/crazyflie.dae' -%}
+  {%- set prop_mesh_file = 'model://laser_uavs_description/meshes/crazyflie/crazyflie_prop.dae' -%}
+  {# <!--}--> #}
+
+  {# Inertias (valores medidos do CrazyS, com termos cruzados) {--> #}
+  {%- set body_ixx = 1.657171e-5 -%}
+  {%- set body_ixy = 0.830806e-6 -%}
+  {%- set body_ixz = 0.718277e-6 -%}
+  {%- set body_iyy = 1.6655602e-5 -%}
+  {%- set body_iyz = 1.800197e-6 -%}
+  {%- set body_izz = 2.9261652e-5 -%}
+
+  {# Helice como barra fina (mesma formula do xacro), escalada pelo slowdown #}
+  {%- set prop_ixx = mass_prop / 12 * (0.006 ** 2 + 0.001 ** 2) * rotor_velocity_slowdown_sim -%}
+  {%- set prop_ixy = 0 -%}
+  {%- set prop_ixz = 0 -%}
+  {%- set prop_iyy = mass_prop / 12 * (4 * radius_rotor ** 2 + 0.001 ** 2) * rotor_velocity_slowdown_sim -%}
+  {%- set prop_iyz = 0 -%}
+  {%- set prop_izz = mass_prop / 12 * (4 * radius_rotor ** 2 + 0.006 ** 2) * rotor_velocity_slowdown_sim -%}
+  {# <!--}--> #}
+
+  <model name="{{  model_name  }}">
+    <link name="{{  root  }}">
+      <!-- Body physics {-->
+      {{ components.multirotor_physics_macro(
+      mass = mass,
+      body_radius = body_radius,
+      body_height = body_height,
+      rotor_velocity_slowdown_sim = rotor_velocity_slowdown_sim,
+      ixx = body_ixx,
+      ixy = body_ixy,
+      ixz = body_ixz,
+      iyy = body_iyy,
+      iyz = body_iyz,
+      izz = body_izz)
+      }}
+      <!--}-->
+
+      <!-- Body visual {-->
+      {# TODO: conferir orientacao/origem do crazyflie.dae no Gazebo e ajustar yaw/z se preciso #}
+      {{ components.visual_mesh_textured_macro(
+        name = 'crazyflie_body',
+        mesh_file = body_mesh_file,
+        mesh_scale = mesh_scale,
+        x = 0,
+        y = 0,
+        z = 0,
+        roll = 0,
+        pitch = 0,
+        yaw = 0)
+      }}
+      <!--}-->
+    </link>
+
+{# Propellers {--> #}
+    {# Ordem dos motores igual ao x500 (convencao do PX4): 0 FR ccw, 1 BL ccw, 2 FL cw, 3 BR cw #}
+    {%- set prop_list = [
+    {
+    'motor_number': 0,
+    'direction': 'ccw',
+    'x': rotor_xy_offset,
+    'y': -rotor_xy_offset,
+    'z': rotor_z_offset,
+    'mesh_files': [prop_mesh_file],
+    'mesh_scale': mesh_scale_prop_ccw,
+    'color': 'Grey'
+    },
+    {
+    'motor_number': 1,
+    'direction': 'ccw',
+    'x': -rotor_xy_offset,
+    'y': rotor_xy_offset,
+    'z': rotor_z_offset,
+    'mesh_files': [prop_mesh_file],
+    'mesh_scale': mesh_scale_prop_ccw,
+    'color': 'Grey'
+    },
+    {
+    'motor_number': 2,
+    'direction': 'cw',
+    'x': rotor_xy_offset,
+    'y': rotor_xy_offset,
+    'z': rotor_z_offset,
+    'mesh_files': [prop_mesh_file],
+    'mesh_scale': mesh_scale_prop_cw,
+    'color': 'Grey'
+    },
+    {
+    'motor_number': 3,
+    'direction': 'cw',
+    'x': -rotor_xy_offset,
+    'y': -rotor_xy_offset,
+    'z': rotor_z_offset,
+    'mesh_files': [prop_mesh_file],
+    'mesh_scale': mesh_scale_prop_cw,
+    'color': 'Grey'
+    }
+    ]
+    -%}
+    {{ components.propellers_macro(
+      prop_list = prop_list,
+      motor_quadratic_a = motor_quadratic_a,
+      motor_quadratic_b = motor_quadratic_b,
+      rotor_velocity_slowdown_sim = rotor_velocity_slowdown_sim,
+      motor_constant = motor_constant,
+      moment_constant = moment_constant,
+      parent = root,
+      mass = mass_prop,
+      radius = radius_rotor,
+      time_constant_up = time_constant_up,
+      time_constant_down = time_constant_down,
+      max_rot_velocity = max_rot_velocity,
+      rotor_drag_coefficient = rotor_drag_coefficient,
+      rolling_moment_coefficient = rolling_moment_coefficient,
+      meshes_z_offset = 0,
+      prop_ixx = prop_ixx,
+      prop_ixy = prop_ixy,
+      prop_ixz = prop_ixz,
+      prop_iyy = prop_iyy,
+      prop_iyz = prop_iyz,
+      prop_izz = prop_izz,
+      use_bem_model = use_bem_model,
+      bem_rho = bem_rho,
+      prop_diameter_inches = prop_diameter_inches,
+      prop_pitch_inches = prop_pitch_inches,
+      prop_chord_m = prop_chord_m,
+      prop_qty_blades = prop_qty_blades,
+      bem_alpha = bem_alpha,
+      bem_cd0 = bem_cd0)
+    }}
+    {# <!--}--> #}
+
+    {# ================================================================== #}
+    {# ||                compulsory sensor definitions                 || #}
+    {# ================================================================== #}
+
+    <!-- Flight Controller {-->
+    {%- set imu_topic = '/imu' -%}
+    {%- set mag_topic = '/mag' -%}
+    {%- set baro_topic = '/baro' -%}
+    {%- set lidar_topic = '/lidar' -%}
+
+    <!-- Gazebo ground truth {-->
+    {{ components.gazebo_groundtruth_macro(
+      home_latitude = 0,
+      home_longitude = 0,
+      home_altitude = 0)
+    }}
+    <!--}-->
+
+    <!-- GPS {-->
+    {# O Crazyflie real nao tem GPS; mantido porque o PX4 SITL do LUS espera esse sensor. #}
+    {{ components.gazebo_gps_macro(
+      gps_name = 'gps0',
+      parent_link = root,
+      update_rate = 10,
+      gps_noise = true,
+      gps_xy_random_walk = 50.0,
+      gps_z_random_walk = 100.0,
+      gps_xy_noise_density = '1.5e-2',
+      gps_z_noise_density = '3.0e-2',
+      gps_vxy_noise_density = 0.5,
+      gps_vz_noise_density = 1.0,
+      x = 0,
+      y = 0,
+      z = 0,
+      roll = 0,
+      pitch = 0,
+      yaw = 0)
+    }}
+    <!--}-->
+
+    <!-- Magnetometer {-->
+    {{ components.gazebo_magnetometer_macro(
+      pub_rate = 100,
+      noise_density = 0.0004,
+      random_walk = 0.0000064,
+      bias_correlation_time = 600,
+      mag_topic = mag_topic)
+    }}
+    <!--}-->
+
+    <!-- Barometer {-->
+    {{ components.gazebo_barometer_macro(
+      baro_topic = baro_topic,
+      pub_rate = 50,
+      baro_drift_pa_per_sec = 0)
+    }}
+    <!--}-->
+
+    <!-- Mavlink interface {-->
+    {% if flight_controller == 'px4' %}
+    {{ components.px4_mavlink_interface_macro(
+      namespace = namespace,
+      instance = instance,
+      imu_topic = imu_topic,
+      mag_topic = mag_topic,
+      baro_topic = baro_topic,
+      lidar_topic = lidar_topic)
+    }}
+    {% elif flight_controller == 'ap' %}
+    {{ components.ardupilot_mavlink_interface_macro(
+      namespace = namespace,
+      instance = instance,
+      imu_topic = imu_topic)
+    }}
+    {% endif %}
+    <!--}-->
+
+    <!-- IMU {-->
+    <!-- NOTE: IMU has to be last, otherwise the simulation is extremely slow! -->
+    {# Ruido da MPU-6500, vindo do crazyflie_base.xacro #}
+    {{ components.gazebo_imu_macro(
+      imu_name = 'imu',
+      parent_link = root,
+      imu_topic = imu_topic,
+      gyroscope_noise_density = 1.7667e-4,
+      gyroscope_random_walk = 9.2542e-06,
+      gyroscope_bias_correlation_time = 1000.0,
+      gyroscope_turn_on_bias_sigma = 0.03,
+      accelerometer_noise_density = 0.0032,
+      accelerometer_random_walk = 1.3524e-04,
+      accelerometer_bias_correlation_time = 300.0,
+      accelerometer_turn_on_bias_sigma = 0.1,
+      x = 0,
+      y = 0,
+      z = 0,
+      roll = 0,
+      pitch = 0,
+      yaw = 0)
+    }}
+    <!--}-->
+    <!--}-->
+
+    {# ================================================================== #}
+    {# ||                  optional sensor definitions                 || #}
+    {# ================================================================== #}
+
+    {# Ground truth {--> #}
+    {% if enable_ground_truth %}
+    {{ components.gazebo_ground_truth_macro(
+      namespace = namespace,
+      odometry_sensor_name = 'ground_truth',
+      parent_link = root,
+      topic_name = 'ground_truth',
+      noise = 0,
+      frame_name = 'world',
+      update_rate = 100,
+      x = 0,
+      y = 0,
+      z = 0,
+      roll = 0,
+      pitch = 0,
+      yaw = 0,
+      x_offset = x_offset,
+      y_offset = y_offset,
+      z_offset = z_offset,
+      roll_offset = roll_offset,
+      pitch_offset = pitch_offset,
+      yaw_offset = yaw_offset)
+    }}
+    {% endif %}
+    {# <!--}--> #}
+
+    {# Sensores pesados do x500 (Livox, RealSense, VIO, pendulo, Garmin) foram omitidos de proposito:
+       o Crazyflie carrega ~15 g de carga util. #}
+  </model>
+</sdf>

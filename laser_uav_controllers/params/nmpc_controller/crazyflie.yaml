@@ -1,0 +1,19 @@
+/**/**:
+  ros__parameters:
+    nmpc_controller:
+      nmpc_mode: "individual_thrust" # individual_thrust or angular_rates_and_thrust
+      # nmpc_mode: "angular_rates_and_thrust" # individual_thrust or angular_rates_and_thrust
+      N: 20 # Horizon length
+      dt: 0.05 # Discrete step in horizon
+
+      # This is the Weight Matrix that penalize state error in FC
+      # {W_position_xy, W_position_z, W_rotation_xy, W_rotation_z, W_speed, W_angular_speed}
+      Q: [40.0, 20.0, 0.3, 1.0, 0.3, 0.3] # Real drone gains 
+
+      # This is the weight Matrix that penalize input control effort in FC
+      R: 1000.0 # stable on gazebo
+        
+
+
+
+
