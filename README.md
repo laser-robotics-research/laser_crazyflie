@@ -1,54 +1,51 @@
-# Crazyflie – onde colocar cada arquivo
+# Crazyflie – where to put each file
 
-Este modelo foi feito para o [laser_uav_system](https://github.com/LASER-Robotics/laser_uav_system).
-Cada subpasta desta pasta tem o nome do pacote de destino e já reproduz o caminho interno dele. Basta copiar o conteúdo de cada subpasta por cima do pacote de mesmo nome.
+This model was made for [laser_uav_system](https://github.com/LASER-Robotics/laser_uav_system).
+Each subfolder in this folder is named after its target package and already mirrors the package's internal path. Just copy the contents of each subfolder over the package with the same name.
 
-**Raiz dos pacotes no sistema:** `~/git/laser_uav_system/ros_packages/`
-(o workspace `~/laser_uav_system_ws/src/` aponta para cá)
+**Package root on the system:** `~/git/laser_uav_system/ros_packages/`
+(the workspace `~/laser_uav_system_ws/src/` points here)
 
-> [!NOTE]
-> A pasta `laser_gazebo_resources` **(ignorar)** não deve ser copiada: ela está no zip só como referência.
+## Files and destinations
 
-## Arquivos e destinos
+All destinations below are relative to `ros_packages/`.
 
-Todos os destinos abaixo são relativos a `ros_packages/`.
-
-| Arquivo (nesta pasta) | Destino |
+| File (in this folder) | Destination |
 |---|---|
 | `crazyflie.sdf.jinja` | `laser_uav_simulation/models/laser_uavs_description/sdf/` |
-| `component_snippets.sdf.jinja` (atualizado; inclui o macro da AI-deck) | `laser_uav_simulation/models/laser_uavs_description/sdf/` |
-| 2 malhas: `crazyflie.dae`, `crazyflie_prop.dae` | `laser_uav_simulation/models/laser_uavs_description/meshes/crazyflie/` |
+| `component_snippets.sdf.jinja` (updated; includes the AI-deck macro) | `laser_uav_simulation/models/laser_uavs_description/sdf/` |
+| 2 meshes: `crazyflie.dae`, `crazyflie_prop.dae` | `laser_uav_simulation/models/laser_uavs_description/meshes/crazyflie/` |
 | `ai_deck_1_1.stl` | `laser_uav_simulation/models/laser_uavs_description/meshes/sensors/` |
-| `22002_crazyflie` (airframe PX4) | `laser_uav_simulation/ROMFS/etc/init.d-posix/airframes/` |
-| `crazyflie.yaml` (massa, inércia, G1, curva a/b) | `laser_uav_managers/params/laser_uavs/` |
-| `crazyflie.yaml` (pesos do NMPC) | `laser_uav_controllers/params/nmpc_controller/` |
-| `crazyflie.yaml` (aceleração/velocidade máx.) | `laser_uav_planners/params/agile_planner/` |
+| `22002_crazyflie` (PX4 airframe) | `laser_uav_simulation/ROMFS/etc/init.d-posix/airframes/` |
+| `crazyflie.yaml` (mass, inertia, G1, a/b curve) | `laser_uav_managers/params/laser_uavs/` |
+| `crazyflie.yaml` (NMPC weights) | `laser_uav_controllers/params/nmpc_controller/` |
+| `crazyflie.yaml` (max acceleration/velocity) | `laser_uav_planners/params/agile_planner/` |
 
-## Instalação
+## Installation
 
-Comando único (rodar de dentro desta pasta):
+Single command (run from inside this folder):
 
 ```bash
 cp -r laser_uav_simulation laser_uav_managers laser_uav_controllers laser_uav_planners \
   ~/git/laser_uav_system/ros_packages/
 ```
 
-## Depois de copiar
+## After copying
 
-1. Os três `crazyflie.yaml` têm o mesmo nome: cada um vai para o pacote da sua subpasta, **não misturar**.
-2. Não trocar `component_snippets.sdf.jinja`, ele envolve uma atualização futura, atualmente não se faz necessário.
-3. Se o sistema foi compilado com `colcon build --symlink-install`, não precisa recompilar (os parâmetros e o SDF são lidos da fonte). Em instalação nova:
+1. The three `crazyflie.yaml` files have the same name: each one goes to the package of its own subfolder, **do not mix them up**.
+2. Do not replace `component_snippets.sdf.jinja`; it involves a future update and is not currently necessary.
+3. If the system was built with `colcon build --symlink-install`, there is no need to rebuild (the parameters and the SDF are read from the source). For a fresh install:
 
    ```bash
    cd ~/laser_uav_system_ws && colcon build --symlink-install
    ```
 
-4. O Gazebo acha as malhas pelo `GAZEBO_MODEL_PATH` (já inclui `laser_uav_simulation/models`); o PX4 lê o airframe direto do ROMFS do pacote. Confira apenas se `crazyflie` está na lista de spawn de `spawn_drones.launch.py` e no `control_manager.launch.py`.
-5. Para usar, em `configs/spawn.yaml` da sessão tmux, defina:
+4. Gazebo finds the meshes through `GAZEBO_MODEL_PATH` (which already includes `laser_uav_simulation/models`); PX4 reads the airframe directly from the package's ROMFS. Just check that `crazyflie` is in the spawn list of `spawn_drones.launch.py` and in `control_manager.launch.py`.
+5. To use it, in `configs/spawn.yaml` of the tmux session, set:
 
    ```yaml
    type: "crazyflie"
    fcu: "px4"
    ```
 
-   O modelo do Crazyflie não tem Livox, RealSense nem VIO (carga útil de ~15 g); só o ground truth é opcional.
+   The Crazyflie model has no Livox, RealSense or VIO (payload of ~15 g); only the ground truth is optional.
