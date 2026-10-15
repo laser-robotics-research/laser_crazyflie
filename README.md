@@ -9,12 +9,9 @@ Each folder here is named after a package and already has the same internal path
 
 ## Quick start
 
-**1. Copy** (run from inside this folder):
+**1. Copy**:
 
-```bash
-cp -r laser_uav_simulation laser_uav_managers laser_uav_controllers laser_uav_planners laser_gazebo_resources \
-  ~/git/laser_uav_system/ros_packages/
-```
+Place each file in its respective location
 
 **2. Build** (only if you did not build with `--symlink-install` before):
 
@@ -29,7 +26,7 @@ type: "crazyflie"
 fcu: "px4"
 ```
 
-**4. Choose the map:** start the simulation with the world `crazyflie_map`.
+**4. Choose the map:** start the simulation with the world `crazyflie_map`. (Instructions bellow)
 
 ## What is in each folder
 
@@ -68,10 +65,23 @@ Destinations are relative to `ros_packages/`.
 def generate_launch_description():
     ...
     DeclareLaunchArgument(
-        '<nome_da_variável>',
+        'world',
         default_value='crazyflie_map',
         ...
     )
+```
+
+### Camera Module
+
+To start the drone with the AI-deck module and access its camera, open `/laser_uav_simulation/tmux/one_drone_px4/configs/spawn.yaml` and add `--enable_ai_deck` to the `sensors` line:
+
+```yaml
+ros__parameters:
+  - id: 1
+    type: "crazyflie"
+    fcu: "px4"
+    pose_spawn: [0.0, 0.0, 1.0, 3.14]  # x y z yaw
+    sensors: "--enable_ground_truth --enable_ai_deck"
 ```
 
 ### Things to watch
