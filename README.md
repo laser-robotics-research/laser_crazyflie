@@ -48,6 +48,7 @@ Destinations are relative to `ros_packages/`.
 |---|---|
 | `crazyflie.sdf.jinja` | `laser_uav_simulation/models/laser_uavs_description/sdf/` |
 | `component_snippets.sdf.jinja` (adds the AI-deck macro) | `laser_uav_simulation/models/laser_uavs_description/sdf/` |
+| `jinja_gen.py` (adds the `--enable_ai_deck` flag) | `laser_uav_simulation/scripts/` |
 | `crazyflie.dae`, `crazyflie_prop.dae` | `laser_uav_simulation/models/laser_uavs_description/meshes/crazyflie/` |
 | `ai_deck_1_1.stl` | `laser_uav_simulation/models/laser_uavs_description/meshes/sensors/` |
 | `22002_crazyflie` (PX4 airframe) | `laser_uav_simulation/ROMFS/etc/init.d-posix/airframes/` |
@@ -83,6 +84,8 @@ ros__parameters:
     pose_spawn: [0.0, 0.0, 1.0, 3.14]  # x y z yaw
     sensors: "--enable_ground_truth --enable_ai_deck"
 ```
+
+The flag is only accepted if the `jinja_gen.py` from this repository is in `laser_uav_simulation/scripts/`.
 
 ### Things to watch
 
