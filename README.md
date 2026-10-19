@@ -1,80 +1,59 @@
-# Crazyflie – where to put each file
+# Crazyflie 2.1+ for laser_uav_system
 
-This model was made for [laser_uav_system](https://github.com/LASER-Robotics/laser_uav_system).
+Files to add the **Crazyflie 2.1+** (with an optional **AI-deck camera**) and the **`crazyflie_map`** world to [laser_uav_system](https://github.com/LASER-Robotics/laser_uav_system), running on PX4 SITL + Gazebo Classic + ROS2.
 
-Each folder here is named after a package and already has the same internal paths as that package. So the idea is simple: **copy each folder over the package with the same name.**
+Each folder in this repository is named after a package of `laser_uav_system` and already has the same internal paths as that package. So the idea is simple: **copy each folder over the package with the same name** (the install script does this for you).
 
-**Packages live in:** `~/git/laser_uav_system/ros_packages/`
-(the workspace `~/laser_uav_system_ws/src/` points here)
+## Requirements
+
+- `laser_uav_system` already installed and working with another drone (x500 or lr7pro).
+- Packages located in `~/git/laser_uav_system/ros_packages/` (the workspace `~/laser_uav_system_ws/src/` points there).
 
 ## Quick start
 
-**1. Copy**:
+### 1. Install the files
 
-Place each file in its respective location
+From the root of this repository:
 
-**2. Build** (only if you did not build with `--symlink-install` before):
+```bash
+chmod +x install_crazyflie.sh
+./install_crazyflie.sh
+```
+
+If `laser_uav_system` is somewhere else:
+
+```bash
+LASER_UAV_SYSTEM=/path/to/laser_uav_system ./install_crazyflie.sh
+```
+
+The script copies the files into `ros_packages/<package>` (the real folders, so the workspace symlinks stay intact).
+
+<details>
+<summary>Prefer to copy by hand?</summary>
+
+Copy each folder over the package with the same name, keeping the internal paths:
+
+```bash
+cp -r laser_gazebo_resources/.   ~/git/laser_uav_system/ros_packages/laser_gazebo_resources/
+cp -r laser_uav_controllers/.    ~/git/laser_uav_system/ros_packages/laser_uav_controllers/
+cp -r laser_uav_managers/.       ~/git/laser_uav_system/ros_packages/laser_uav_managers/
+cp -r laser_uav_planners/.       ~/git/laser_uav_system/ros_packages/laser_uav_planners/
+cp -r laser_uav_simulation/.     ~/git/laser_uav_system/ros_packages/laser_uav_simulation/
+```
+</details>
+
+### 2. Build
+
+Always rebuild after installing. New files (yaml, launch files, meshes) are only linked into the workspace by a build:
 
 ```bash
 cd ~/laser_uav_system_ws && colcon build --symlink-install
+source install/setup.bash
 ```
 
-**3. Choose the drone** in `configs/spawn.yaml` of your tmux session:
+### 3. Choose the drone
 
-```yaml
-type: "crazyflie"
-fcu: "px4"
-```
-
-**4. Choose the map:** start the simulation with the world `crazyflie_map`. (Instructions bellow)
-
-## What is in each folder
-
-| Folder | What it adds |
-|---|---|
-| `laser_uav_simulation` | The drone model (SDF, meshes) and the PX4 airframe |
-| `laser_uav_managers` | Drone parameters (mass, inertia, motors) |
-| `laser_uav_controllers` | Controller weights (NMPC) |
-| `laser_uav_planners` | Planner limits (max acceleration and velocity) |
-| `laser_gazebo_resources` | The map: ground (`base_crazyrun`), obstacles (`obstacles_crazyrun`) and the world `crazyflie_map` |
-
-## Details
-
-### File by file
-
-Destinations are relative to `ros_packages/`.
-
-| File (in this folder) | Destination |
-|---|---|
-| `crazyflie.sdf.jinja` | `laser_uav_simulation/models/laser_uavs_description/sdf/` |
-| `component_snippets.sdf.jinja` (adds the AI-deck macro) | `laser_uav_simulation/models/laser_uavs_description/sdf/` |
-| `jinja_gen.py` (adds the `--enable_ai_deck` flag) | `laser_uav_simulation/scripts/` |
-| `crazyflie.dae`, `crazyflie_prop.dae` | `laser_uav_simulation/models/laser_uavs_description/meshes/crazyflie/` |
-| `ai_deck_1_1.stl` | `laser_uav_simulation/models/laser_uavs_description/meshes/sensors/` |
-| `22002_crazyflie` (PX4 airframe) | `laser_uav_simulation/ROMFS/etc/init.d-posix/airframes/` |
-| `crazyflie.yaml` (mass, inertia, G1, a/b curve) | `laser_uav_managers/params/laser_uavs/` |
-| `crazyflie.yaml` (NMPC weights) | `laser_uav_controllers/params/nmpc_controller/` |
-| `crazyflie.yaml` (max acceleration/velocity) | `laser_uav_planners/params/agile_planner/` |
-| `base_crazyrun/`, `obstacles_crazyrun/` (map models) | `laser_gazebo_resources/models/` |
-| `crazyflie_map.world` | `laser_gazebo_resources/worlds/` |
-
-### About the map
-
-1. Choose the map:** in `/laser_uav_simulation/launch/gazebo.launch.py`, inside `generate_launch_description()`, change the `default_value` of `<nome_da_variável>` to `'crazyflie_map'`:
-
-```python
-def generate_launch_description():
-    ...
-    DeclareLaunchArgument(
-        'world',
-        default_value='crazyflie_map',
-        ...
-    )
-```
-
-### Camera Module
-
-To start the drone with the AI-deck module and access its camera, open `/laser_uav_simulation/tmux/one_drone_px4/configs/spawn.yaml` and add `--enable_ai_deck` to the `sensors` line:
+In `laser_uav_simulation/tmux/one_drone_px4/configs/spawn.yaml`:
 
 ```yaml
 ros__parameters:
@@ -82,23 +61,74 @@ ros__parameters:
     type: "crazyflie"
     fcu: "px4"
     pose_spawn: [0.0, 0.0, 1.0, 3.14]  # x y z yaw
-    sensors: "--enable_ground_truth --enable_ai_deck"
+    sensors: "--enable_ground_truth"
 ```
 
-The flag is only accepted if the `jinja_gen.py` from this repository is in `laser_uav_simulation/scripts/`.
+### 4. Choose the map (optional)
 
-### Things to watch
+To use the `crazyflie_map` world, open `laser_uav_simulation/launch/gazebo.launch.py` and, inside `generate_launch_description()`, set the default of the `world` argument:
 
-1. The three `crazyflie.yaml` files have the same name: each one goes to the package of its own folder, **do not mix them up**.
-2. With `--symlink-install` there is no need to rebuild after copying (parameters and SDF are read from the source). Without it, rebuild, then close and reopen Gazebo.
-3. Gazebo finds the drone meshes through `GAZEBO_MODEL_PATH` (it already includes `laser_uav_simulation/models`). PX4 reads the airframe directly from the ROMFS of the package.
-4. Check that `crazyflie` is in the spawn list of `spawn_drones.launch.py` and in `control_manager.launch.py`.
-   
+```python
+DeclareLaunchArgument(
+    'world',
+    default_value='crazyflie_map',
+    ...
+)
+```
+
+> This file is not part of this repository, so this edit is manual.
+
+### 5. Start the simulation
+
+Start your usual tmux session. Close and reopen Gazebo if it was already running.
+
+## Camera module (AI-deck)
+
+To spawn the drone with the AI-deck (Himax HM01B0 camera), add `--enable_ai_deck` to the `sensors` line of `spawn.yaml`:
+
+```yaml
+sensors: "--enable_ground_truth --enable_ai_deck"
+```
+
+The camera is monochrome (mono8), 324 x 244, 30 Hz. To check that it is running:
+
 ```bash
-uavs_available = ['x500', 'lr7pro', 'crazyflie']
+ros2 topic list | grep ai_deck
 ```
-5. If Gazebo cannot find `base_crazyrun` or `obstacles_crazyrun`, check that `laser_gazebo_resources/models` is in `GAZEBO_MODEL_PATH`. The folder name must match the name used in `model://`.
-6. The Crazyflie has no Livox, RealSense or VIO (payload of ~15 g). Only the ground truth and the AI-deck camera are optional.
 
+It should show topics like `/uav1/camera/ai_deck/image_raw`. To see the image: `ros2 run rqt_image_view rqt_image_view`.
 
+## What is in each folder
 
+| Folder | What it adds |
+|---|---|
+| `laser_uav_simulation` | Drone model (SDF template, meshes), PX4 airframe, spawn launch file and `jinja_gen.py` (with the `--enable_ai_deck` flag) |
+| `laser_uav_managers` | Drone parameters (mass, inertia, motors) and `control_manager.launch.py` |
+| `laser_uav_controllers` | Controller weights (NMPC) |
+| `laser_uav_planners` | Planner limits (max acceleration and velocity) |
+| `laser_gazebo_resources` | The map: ground (`base_crazyrun`), obstacles (`obstacles_crazyrun`) and the world `crazyflie_map` |
+
+### File by file
+
+Destinations are relative to `ros_packages/`.
+
+| File | Destination | What it does |
+|---|---|---|
+| `crazyflie.sdf.jinja` | `laser_uav_simulation/models/laser_uavs_description/sdf/` | Drone model template (body, propellers, sensors, AI-deck macro) |
+| `jinja_gen.py` | `laser_uav_simulation/scripts/` | Turns the template into an SDF using the sensor flags |
+| `crazyflie.dae`, `crazyflie_prop.dae` | `laser_uav_simulation/models/laser_uavs_description/meshes/crazyflie/` | Body and propeller 3D meshes |
+| `ai_deck_1_1.stl` | `laser_uav_simulation/models/laser_uavs_description/meshes/sensors/` | AI-deck 3D mesh |
+| `22002_crazyflie` | `laser_uav_simulation/ROMFS/etc/init.d-posix/airframes/` | PX4 airframe (rotor geometry, rate gains) |
+| `spawn_drones.launch.py` | `laser_uav_simulation/launch/` | Spawns the drones listed in `spawn.yaml` (already accepts `crazyflie`) |
+| `crazyflie.yaml` (mass, inertia, G1, motor curve) | `laser_uav_managers/params/laser_uavs/` | Drone parameters |
+| `control_manager.launch.py` | `laser_uav_managers/launch/` | Starts the control manager (already accepts `crazyflie`) |
+| `crazyflie.yaml` (NMPC weights) | `laser_uav_controllers/params/nmpc_controller/` | Controller tuning |
+| `crazyflie.yaml` (max acceleration/velocity) | `laser_uav_planners/params/agile_planner/` | Planner limits |
+| `base_crazyrun/`, `obstacles_crazyrun/` | `laser_gazebo_resources/models/` | Map models |
+| `crazyflie_map.world` | `laser_gazebo_resources/worlds/` | Map world |
+
+## Things to know
+
+1. The `crazyflie` type must be in the drone list of `spawn_drones.launch.py` (`uavs_available`) and `control_manager.launch.py` (`defaults_uavs`). Both files here already include it.
+2. PX4 reads the airframe directly from the ROMFS of `laser_uav_simulation`.
+3. The Crazyflie has no Livox, RealSense or VIO (payload of about 15 g). Only the ground truth and the AI-deck camera are optional.

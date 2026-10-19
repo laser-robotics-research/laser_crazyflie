@@ -3,6 +3,152 @@
 
   {% import "component_snippets.sdf.jinja" as components %}
 
+{# ai_deck_camera_macro {--> #}
+{# ------------------------------------------------------------------------
+   AI-deck 1.1 da Crazyflie com a camera Himax HM01B0 (monocromatica).
+
+   Valores baseados nos datasheets da Bitcraze:
+     - janela de leitura 324 x 244, ate 60 FPS
+     - FOV horizontal 87 graus (= 1.5184 rad)
+     - imagem em tons de cinza (formato L8 -> mono8 no ROS2)
+     - peso 4.4 g, tamanho 30 x 52 x 8 mm
+
+   Parametros obrigatorios:
+     namespace    -> namespace do drone (ex.: 'uav1')
+     parent_link  -> link do corpo do drone onde o deck fica preso (root)
+
+   Posicao (tudo em relacao ao link do deck, que e preso ao parent_link):
+     x, y, z, roll, pitch, yaw     -> onde o deck esta no drone
+     visual_x/y/z/roll/pitch/yaw   -> desloca/gira so o desenho 3D dentro do link
+     sensor_x/y/z                  -> onde esta a lente (mesma referencia dos visual_*)
+
+   Peso:
+     mass            -> massa em kg (padrao 0.0044 = 4.4 g). Use 0 para ignorar o peso.
+     size_x/y/z      -> caixa usada para calcular a inercia (padrao 52 x 30 x 8 mm)
+     com_x/y/z       -> centro do deck em relacao a origem do modelo 3D. Os padroes
+                        valem para o seu ai_deck_1_1.stl (origem no canto do modelo).
+   ------------------------------------------------------------------------ #}
+{%- macro ai_deck_camera_macro(
+    namespace,
+    parent_link,
+    camera_name = 'ai_deck',
+    topic_ns_prefix = 'camera/',
+    frame_rate = 30,
+    image_width = 324,
+    image_height = 244,
+    image_format = 'L8',
+    horizontal_fov = 1.5184,
+    min_distance = 0.02,
+    max_distance = 50,
+    noise_mean = 0.0,
+    noise_stddev = 0.0,
+    mass = 0.0044,
+    size_x = 0.052,
+    size_y = 0.030,
+    size_z = 0.008,
+    com_x = 0.027,
+    com_y = -0.0143,
+    com_z = -0.0006,
+    mesh_file = 'model://laser_uavs_description/meshes/sensors/ai_deck_1_1.stl',
+    mesh_scale = '1 1 1',
+    color = 'White',
+    visual_x = 0,
+    visual_y = 0,
+    visual_z = 0,
+    visual_roll = 0,
+    visual_pitch = 0,
+    visual_yaw = 0,
+    x = 0,
+    y = 0,
+    z = 0,
+    roll = 0,
+    pitch = 0,
+    yaw = 0,
+    sensor_x = 0,
+    sensor_y = 0,
+    sensor_z = 0) -%}
+<link name="{{ namespace }}_{{ camera_name }}_link">
+    <pose>{{ x }} {{ y }} {{ z }} {{ roll }} {{ pitch }} {{ yaw }}</pose>
+
+    <!-- peso do deck {-->
+    {% if mass > 0 %}
+    <inertial>
+      <pose>{{ visual_x + com_x }} {{ visual_y + com_y }} {{ visual_z + com_z }} 0 0 0</pose>
+      <mass>{{ mass }}</mass>
+      <inertia>
+        <ixx>{{ mass / 12 * (size_y ** 2 + size_z ** 2) }}</ixx>
+        <ixy>0</ixy>
+        <ixz>0</ixz>
+        <iyy>{{ mass / 12 * (size_x ** 2 + size_z ** 2) }}</iyy>
+        <iyz>0</iyz>
+        <izz>{{ mass / 12 * (size_x ** 2 + size_y ** 2) }}</izz>
+      </inertia>
+    </inertial>
+    {% else %}
+    {{ components.zero_inertial_macro() }}
+    {% endif %}
+    <!--}-->
+
+    <!-- visual: o modelo 3D do Blender {-->
+    {{ components.visual_mesh_macro(
+      name = camera_name,
+      mesh_file = mesh_file,
+      mesh_scale = mesh_scale,
+      color = color,
+      x = visual_x,
+      y = visual_y,
+      z = visual_z,
+      roll = visual_roll,
+      pitch = visual_pitch,
+      yaw = visual_yaw)
+    }}
+    <!--}-->
+
+    <!-- sensor: a camera em si (olha para +X do link) {-->
+    <sensor name="{{ camera_name }}_sensor" type="camera">
+      <pose>{{ sensor_x }} {{ sensor_y }} {{ sensor_z }} 0 0 0</pose>
+      <always_on>1</always_on>
+      <update_rate>{{ frame_rate }}</update_rate>
+      <visualize>0</visualize>
+      <camera>
+        <horizontal_fov>{{ horizontal_fov }}</horizontal_fov>
+        <image>
+          <width>{{ image_width }}</width>
+          <height>{{ image_height }}</height>
+          <format>{{ image_format }}</format>
+        </image>
+        <clip>
+          <near>{{ min_distance }}</near>
+          <far>{{ max_distance }}</far>
+        </clip>
+        <noise>
+          <type>gaussian</type>
+          <mean>{{ noise_mean }}</mean>
+          <stddev>{{ noise_stddev }}</stddev>
+        </noise>
+      </camera>
+
+      <!-- plugin que publica a imagem no ROS2 {-->
+      <plugin name="{{ namespace }}_{{ camera_name }}_plugin" filename="libgazebo_ros_camera.so">
+        <ros>
+          <namespace>{{ namespace }}</namespace>
+        </ros>
+        <camera_name>{{ topic_ns_prefix }}{{ camera_name }}</camera_name>
+        <frame_name>{{ namespace }}_{{ camera_name }}_link</frame_name>
+      </plugin>
+      <!--}-->
+    </sensor>
+    <!--}-->
+</link>
+
+<joint name="{{ namespace }}_{{ camera_name }}_joint" type="fixed">
+  <parent>{{ parent_link }}</parent>
+  <child>{{ namespace }}_{{ camera_name }}_link</child>
+</joint>
+{%- endmacro -%}
+{# <!--}--> #}
+
+
   {# ================================================================== #}
   {# ||  Crazyflie 2.1+ -- portado do CrazyS (crazyflie.xacro)       || #}
   {# ||  Estrutura baseada no x500.sdf.jinja do LUS                  || #}
@@ -324,7 +470,7 @@
     {# AI-deck 1.1 (câmera Himax HM01B0) {--> #}
     
     {% if enable_ai_deck %}
-    {{ components.ai_deck_camera_macro(
+    {{ ai_deck_camera_macro(
       namespace = namespace,
       parent_link = root,
       mesh_file = 'model://laser_uavs_description/meshes/sensors/ai_deck_1_1.stl',
