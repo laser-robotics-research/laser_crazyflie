@@ -64,21 +64,10 @@ ros__parameters:
     sensors: "--enable_ground_truth"
 ```
 
-### 4. Choose the map (optional)
-
-To use the `crazyflie_map` world, open `laser_uav_simulation/launch/gazebo.launch.py` and, inside `generate_launch_description()`, set the default of the `world` argument:
-
-```python
-DeclareLaunchArgument(
-    'world',
-    default_value='crazyflie_map',
-    ...
-)
-```
 
 > This file is not part of this repository, so this edit is manual.
 
-### 5. Start the simulation
+### 4. Start the simulation
 
 Start your usual tmux session. Close and reopen Gazebo if it was already running.
 
