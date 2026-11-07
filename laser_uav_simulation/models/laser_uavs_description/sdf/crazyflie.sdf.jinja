@@ -27,6 +27,8 @@
      size_x/y/z      -> caixa usada para calcular a inercia (padrao 52 x 30 x 8 mm)
      com_x/y/z       -> centro do deck em relacao a origem do modelo 3D. Os padroes
                         valem para o seu ai_deck_1_1.stl (origem no canto do modelo).
+
+    real mass 4.4g, but if you swap it, you will need to adjust the drone's mass and inertia in the manager.
    ------------------------------------------------------------------------ #}
 {%- macro ai_deck_camera_macro(
     namespace,
@@ -42,7 +44,7 @@
     max_distance = 50,
     noise_mean = 0.0,
     noise_stddev = 0.0,
-    mass = 0.0044,
+    mass = 0.0, 
     size_x = 0.052,
     size_y = 0.030,
     size_z = 0.008,
@@ -157,7 +159,7 @@
   {# Robot parameters {--> #}
   {%- set mass = 0.025 -%} {# [kg] #}
   {%- set body_radius = 0.035 -%} {# [m] xacro usa caixa 0.07 x 0.07; aqui vira cilindro #}
-  {%- set body_height = 0.025 -%} {# [m] #}
+  {%- set body_height = 0.015 -%} {# [m] #}
   {%- set mass_prop = 0.00075 -%} {# [kg] #}
   {%- set radius_rotor = 0.0225 -%} {# [m] #}
 
@@ -165,6 +167,12 @@
   {%- set rotor_z_offset = 0.0125 -%} {# [m] #}
 
   {%- set root = 'base_link' -%}
+
+  {%- set leg_size_x = 0.008 -%}   {# [m] #}
+  {%- set leg_size_y = 0.008 -%}   {# [m] #}
+  {%- set leg_size_z = 0.006 -%}   {# [m] altura da perna #}
+  {%- set leg_xy = rotor_xy_offset -%}
+  {%- set leg_bottom_z = -0.015 -%}   {# z da base da caixa; negativo se a perna passa de z = 0 #}
   {# <!--}--> #}
 
   {# Motor constants {--> #}
@@ -238,6 +246,21 @@
       iyz = body_iyz,
       izz = body_izz)
       }}
+      <!--}-->
+
+      <!-- Leg collisions {-->
+      {% for sx, sy in [(1,1), (1,-1), (-1,1), (-1,-1)] %}
+      <collision name="leg_{{ loop.index }}_collision">
+        <pose>{{ sx * leg_xy }} {{ sy * leg_xy }} {{ leg_bottom_z + leg_size_z / 2 }} 0 0 0</pose>
+        <geometry>
+          <box><size>{{ leg_size_x }} {{ leg_size_y }} {{ leg_size_z }}</size></box>
+        </geometry>
+        <surface>
+          <contact><ode><min_depth>0.001</min_depth><max_vel>0.0</max_vel></ode></contact>
+          <friction><ode/></friction>
+        </surface>
+      </collision>
+      {% endfor %}
       <!--}-->
 
       <!-- Body visual {-->

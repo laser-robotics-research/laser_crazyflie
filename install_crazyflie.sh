@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Copia os arquivos do Crazyflie para os pacotes do laser_uav_system.
+# Copies the Crazyflie files into the laser_uav_system packages.
 #
-# Os arquivos vao para ~/git/laser_uav_system/ros_packages/<pacote> (o destino
-# dos links), nunca para o workspace, assim os links simbolicos continuam intactos.
+# The files go to ~/git/laser_uav_system/ros_packages/<package> (the link
+# targets), never to the workspace, so the symbolic links stay intact.
 #
-# Uso: ./install_crazyflie.sh
-# Outro local do repositorio: LASER_UAV_SYSTEM=/caminho ./install_crazyflie.sh
+# Usage: ./install_crazyflie.sh
+# Other location of the repository: LASER_UAV_SYSTEM=/path ./install_crazyflie.sh
 
 set -euo pipefail
 
@@ -16,12 +16,11 @@ PACKAGES=(
   laser_gazebo_resources
   laser_uav_controllers
   laser_uav_managers
-  laser_uav_planners
   laser_uav_simulation
 )
 
 if [ ! -d "$PACKAGES_DIR" ]; then
-  echo "[ERRO] laser_uav_system nao esta instalado ($PACKAGES_DIR nao existe)." >&2
+  echo "[ERROR] laser_uav_system is not installed ($PACKAGES_DIR does not exist)." >&2
   exit 1
 fi
 
@@ -30,5 +29,11 @@ for pkg in "${PACKAGES[@]}"; do
   echo "[ OK ] $pkg"
 done
 
-echo "Pronto. Se o workspace nao foi compilado com --symlink-install, rode:"
+# Planner limits: in the new LUS they live in the pmm_planner package, inside
+# laser_uav_planners (ros_packages/pmm_planner/params).
+cp -r "$SRC_DIR/laser_uav_planners/ros_packages/pmm_planner/." \
+  "$PACKAGES_DIR/laser_uav_planners/ros_packages/pmm_planner/"
+echo "[ OK ] laser_uav_planners/ros_packages/pmm_planner"
+
+echo "Done. If the workspace was not built with --symlink-install, run:"
 echo "  cd ~/laser_uav_system_ws && colcon build --symlink-install"

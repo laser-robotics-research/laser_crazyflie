@@ -1,13 +1,9 @@
 /**/**:
   ros__parameters:
-    agile_planner:
+    pmm_planner:
       multirotor_parameters:
-        # This is a = F / M. F is maximum total thrust available
-        max_accel: 14.0 
-
-        # This is the maximum speed
+        max_accel: 14.0
         max_vel: 3.0
-
         default_vel: 1.0
 
       ltd_opt:

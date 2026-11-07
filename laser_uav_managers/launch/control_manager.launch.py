@@ -27,7 +27,7 @@ def generate_launch_description():
         print("The uav name dont set up in yours enviroment variables")
         return
 
-    if uav_type == "" or (not uav_type in defaults_uavs):
+    if uav_type == "" or uav_type not in defaults_uavs:
         print("The uav type dont set up in yours enviroment variables")
         return
 
@@ -38,16 +38,8 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'nmpc_controller_file',
             default_value=PathJoinSubstitution(
-                [FindPackageShare('laser_uav_controllers'), 'params', 'nmpc_controller', uav_type + '.yaml']),
-            description='Full path to the file with the all parameters.'
-        )
-    )
-
-    declared_arguments.append(
-        DeclareLaunchArgument(
-            'agile_planner_file',
-            default_value=PathJoinSubstitution(
-                [FindPackageShare('laser_uav_planners'), 'params', 'agile_planner', uav_type + '.yaml']),
+                [FindPackageShare('laser_uav_controllers'), 'params',
+                 'nmpc_controller', uav_type + '.yaml']),
             description='Full path to the file with the all parameters.'
         )
     )
@@ -56,7 +48,8 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'uav_parameters_file',
             default_value=PathJoinSubstitution(
-                [FindPackageShare('laser_uav_managers'), 'params', 'laser_uavs', uav_type + '.yaml']),
+                [FindPackageShare('laser_uav_managers'), 'params',
+                 'laser_uavs', uav_type + '.yaml']),
             description='Full path to the file with the all parameters.'
         )
     )
@@ -76,9 +69,17 @@ def generate_launch_description():
             default_value=PythonExpression(['"', os.getenv('REAL_UAV', "true"), '" == "false"']),
             description='Whether use the simulation time.'))
 
+    for argument_name, default_topic in [
+        ('odometry_topic', '/' + uav_name + '/estimation_manager/estimation'),
+        ('reference_horizon_topic', '/' + uav_name + '/planning_manager/reference_horizon'),
+        ('planning_diagnostics_topic', '/' + uav_name + '/planning_manager/diagnostics'),
+    ]:
+        declared_arguments.append(
+            DeclareLaunchArgument(argument_name, default_value=default_topic)
+        )
+
     # Initialize arguments
     nmpc_controller_file = LaunchConfiguration('nmpc_controller_file')
-    agile_planner_file = LaunchConfiguration('agile_planner_file')
     uav_parameters_file = LaunchConfiguration('uav_parameters_file')
     control_manager_file = LaunchConfiguration('control_manager_file')
 
@@ -88,10 +89,10 @@ def generate_launch_description():
         name='control_manager',
         namespace=uav_name,
         output='screen',
-        parameters=[control_manager_file, uav_parameters_file, agile_planner_file,
+        parameters=[control_manager_file, uav_parameters_file,
                     nmpc_controller_file, {'use_sim_time': LaunchConfiguration('use_sim_time')}],
         remappings=[
-            ('/' + uav_name + '/odometry_in', '/' + uav_name + '/estimation_manager/estimation'),
+            ('/' + uav_name + '/odometry_in', LaunchConfiguration('odometry_topic')),
             ('/' + uav_name + '/motor_speed_estimation_in',
              '/' + uav_name + '/hw_api/motor_speed_estimated'),
             ('/' + uav_name + '/imu_in', '/' + uav_name + '/hw_api/imu'),
@@ -100,10 +101,14 @@ def generate_launch_description():
             ('/' + uav_name + '/diagnostics_out', '/' + uav_name + '/control_manager/diagnostics'),
             ('/' + uav_name + '/attitude_rates_thrust_out', '/' +
              uav_name + '/control_manager/attitude_rates_thrust'),
-            ('/' + uav_name + '/goto_in', '/' + uav_name + '/control_manager/goto'),
-            ('/' + uav_name + '/goto_relative_in', '/' + uav_name + '/control_manager/goto_relative'),
-            ('/' + uav_name + '/trajectory_path_in', '/' +
-             uav_name + '/control_manager/trajectory_path'),
+            ('/' + uav_name + '/reference_horizon_in',
+             LaunchConfiguration('reference_horizon_topic')),
+            ('/' + uav_name + '/planning_diagnostics_in',
+             LaunchConfiguration('planning_diagnostics_topic')),
+            ('/' + uav_name + '/control_state_out',
+             '/' + uav_name + '/control_manager/state'),
+            ('/' + uav_name + '/reference_path_out',
+             '/' + uav_name + '/control_manager/reference_path'),
             ('/' + uav_name + '/takeoff', '/' + uav_name + '/control_manager/takeoff'),
             ('/' + uav_name + '/land', '/' + uav_name + '/control_manager/land'),
             ('/' + uav_name + '/api_diagnostics_in', '/' + uav_name + '/hw_api/diagnostics'),

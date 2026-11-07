@@ -5,10 +5,10 @@
   ros__parameters:
     multirotor_parameters:
       # Massa do corpo (mesma convencao do x500/lr7pro: so o base_link; as 4 helices somam +0.003 kg no Gazebo)
-      mass: 0.025 # Kg
+      mass: 0.02803 # Kg
 
       # Diagonal da matriz de inercia (body_ixx, body_iyy, body_izz do SDF; os termos cruzados do SDF sao ignorados)
-      inertia: [1.657171e-5, 1.6655602e-5, 2.9261652e-5]
+      inertia: [2.0474e-5, 2.1055e-5, 3.6425e-5]
 
       # Constante de empuxo = motor_constant do SDF [N/(rad/s)^2]
       c_thrust: 1.2819184e-8
